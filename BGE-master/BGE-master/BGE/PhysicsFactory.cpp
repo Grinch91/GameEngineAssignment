@@ -9,6 +9,7 @@
 #include "Model.h"
 #include "dirent.h"
 #include "Utils.h"
+#include "FountainEffect.h"
 using namespace BGE;
 
 PhysicsFactory::PhysicsFactory(btDiscreteDynamicsWorld * dynamicsWorld)
@@ -234,37 +235,53 @@ shared_ptr<PhysicsController> PhysicsFactory::CreateCameraPhysics()
 	dynamicsWorld->addRigidBody(body);
 	return physicsCamera;
 }
-/*
-shared_ptr<PhysicsController> PhysicsFactory::CreateWizardPhysics()
+
+shared_ptr<PhysicsController> PhysicsFactory::CreateWizardPhysics(glm::vec3 pos, glm::quat quat, glm::vec3 scale)
 {
 	shared_ptr<GameComponent> wizard = make_shared<GameComponent>();
-	wizard = make_shared<GameComponent>();
-	wizard->Attach(Content::LoadModel("wizard2", glm::rotate(glm::mat4(1), 90.0f, glm::vec3(0,1,0))));
-	wizard->position = glm::vec3(0,8,0);
-	wizard->scale = glm::vec3(10,10,10);
-	wizard->diffuse = glm::vec3(1.2f, 1.2f, 1.2f);
+	string name = "wizard2";
+	wizard->scale = scale;
 	Game::Instance()->Attach(wizard);
+	shared_ptr<Model> model = Content::LoadModel(name);
+	wizard->specular = glm::vec3(1.2f, 1.2f, 1.2f);
+	model->Initialise();
+	wizard->Attach(model);
+
+	std::vector<glm::vec3>::iterator it = model->vertices.begin(); 	
+	btConvexHullShape * tetraShape = new btConvexHullShape();
+
+	shared_ptr<FountainEffect> glow = make_shared<FountainEffect>(500);
+	glow->position = glm::vec3(pos.x-1, pos.y-4,pos.z+2);
+	glow->diffuse = glm::vec3(0,1,1);
+	wizard->Attach(glow);
+
+	while (it != model->vertices.end())
+	{
+		glm::vec4 point = glm::vec4(* it, 0) * glm::scale(glm::mat4(1), scale);
+		tetraShape->addPoint(GLToBtVector(glm::vec3(point)));
+		it ++;
+	}
 	
-
-	btVector3 inertia;
-	// Now add physics to the camera
-	btCollisionShape * cameraWizard = new btCylinderShape(btVector3(0.5f, 5.0f, 2.5f));
-	cameraWizard->calculateLocalInertia(1, inertia);
-	shared_ptr<PhysicsCamera> physicsCamera = make_shared<PhysicsCamera>(this);
-	wizard->Attach(physicsCamera);
-
-	shared_ptr<Camera> camera = Game::Instance()->camera;
-	camera->Attach(physicsCamera);
-
-	btRigidBody::btRigidBodyConstructionInfo cameraCI(10,physicsCamera.get(), cameraWizard, inertia);  
-	btRigidBody * body = new btRigidBody(cameraCI);
-	physicsCamera->SetPhysicsStuff(cameraWizard, body, physicsCamera.get());
-	body->setCollisionFlags(body->getCollisionFlags() | btCollisionObject::CF_KINEMATIC_OBJECT);
-	body->setActivationState(DISABLE_DEACTIVATION);
+	btScalar mass = 1000;
+	btVector3 inertia(0,0,0);
 	
+	tetraShape->calculateLocalInertia(mass,inertia);
+	btDefaultMotionState * motionState = new btDefaultMotionState(btTransform(GLToBtQuat(quat),GLToBtVector(pos)));	
+	
+	btRigidBody::btRigidBodyConstructionInfo rigidBodyCI(mass,motionState, tetraShape, inertia);
+	btRigidBody * body = new btRigidBody(rigidBodyCI);
+	body->setCollisionFlags(body->getCollisionFlags() | btCollisionObject::CF_CUSTOM_MATERIAL_CALLBACK);
 	dynamicsWorld->addRigidBody(body);
-	return physicsCamera;
-}*/
+
+	shared_ptr<PhysicsController> controller =make_shared<PhysicsController>(tetraShape, body, motionState);	
+	body->setUserPointer(controller.get());
+	body->setGravity(btVector3(0,0,0));
+	wizard->Attach(controller);
+
+	
+	controller->tag = "Wizard";	
+	return controller;
+}
 
 shared_ptr<PhysicsController> PhysicsFactory::CreateRagdoll(glm::vec3 position)
 {

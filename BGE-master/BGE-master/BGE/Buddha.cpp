@@ -21,7 +21,7 @@ Buddha::~Buddha(void)
 bool Buddha::Initialise()
 {	
 	
-	soundSystem->PlaySound("Buddha", glm::vec3(0,0,0));
+	soundSystem->PlaySound("theme", glm::vec3(0,0,0));
 	riftEnabled = false;
 	fullscreen = true;
 	/*width = 800;

@@ -26,6 +26,8 @@ Assignment::~Assignment(void)
 bool Assignment::Initialise()
 {
           
+		//soundSystem->PlaySound("theme", glm::vec3(0,0,0));
+		//Kept throwing exceptions and the song wasn't loading
 		// Set up the collision configuration and dispatcher
 		collisionConfiguration = new btDefaultCollisionConfiguration();
 		dispatcher = new btCollisionDispatcher(collisionConfiguration);
@@ -38,7 +40,6 @@ bool Assignment::Initialise()
 		dynamicsWorld = new btDiscreteDynamicsWorld(dispatcher,broadphase,solver,collisionConfiguration);
 		dynamicsWorld->setGravity(btVector3(0,-9,0));
 
-		string model = "wizard2";
 
 		wizard = make_shared<GameComponent>();
 		wizard->Attach(Content::LoadModel("wizard2", glm::rotate(glm::mat4(1), 90.0f, glm::vec3(0,1,0))));
@@ -59,21 +60,16 @@ bool Assignment::Initialise()
         width = 800;
         height = 600;
 
-        mass = 1.0f;
         wizard->velocity = glm::vec3(0,0,0);
 
-		int a=20;
-		int b=10;
-		float x=-20;
-		float y=0;
-		float z=20;
+		
 
 		physicsFactory = make_shared<PhysicsFactory>(dynamicsWorld);
 		
-		physicsFactory->CreateFromModel(model, glm::vec3(0,8,0),glm::quat(), glm::vec3(10,10,10));
+		physicsFactory->CreateWizardPhysics(glm::vec3(0,8,0),glm::quat(), glm::vec3(10,10,10));
 		physicsFactory->CreateCylinder(5,5,glm::vec3(20,0,-20),glm::quat());		
-		physicsFactory->CreateStructure("tower",glm::vec3(80,0,80),5,10);
-		physicsFactory->CreateStructure("pyramid",glm::vec3(20,0,20),10,10);
+		physicsFactory->CreateStructure("tower",glm::vec3(80,0,80),5,5);
+		physicsFactory->CreateStructure("pyramid",glm::vec3(20,0,20),5,5);
 		physicsFactory->CreateRagdoll(glm::vec3(-20,20,-20));
 		physicsFactory->CreateGroundPhysics();
 		physicsFactory->CreateCameraPhysics();
